@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import textwrap
 from collections import deque
 from dataclasses import dataclass, field
 from textwrap import indent
@@ -19,6 +20,9 @@ MAX_PROGRESS_CHARS = 300
 
 def one_line(text: str) -> str:
     return " ".join(text.split())
+
+def shorten_field(text: str, max_len: int) -> str:
+    return textwrap.shorten(one_line(text), width=max_len, placeholder="…")
 
 
 def truncate(text: str, max_len: int) -> str:
@@ -44,7 +48,7 @@ def format_header(elapsed_s: float, turn: Optional[int], label: str) -> str:
 
 
 def format_command(command: str) -> str:
-    command = truncate(command, MAX_CMD_LEN)
+    command = shorten_field(command, MAX_CMD_LEN)
     return f"`{command}`"
 
 
@@ -55,7 +59,7 @@ def format_query(query: str) -> str:
 def format_paths(paths: list[str]) -> str:
     rendered = []
     for path in paths:
-        rendered.append(f"`{truncate(path, MAX_PATH_LEN)}`")
+        rendered.append(f"`{shorten_field(path, MAX_PATH_LEN)}`")
     return ", ".join(rendered)
 
 
