@@ -40,9 +40,6 @@ Optional flags:
 - `--progress-silent/--no-progress-silent` (default silent)
 - `--final-notify/--no-final-notify` (default notify via new message)
 - `--ignore-backlog/--process-backlog` (default ignore pending updates)
-- `--codex-io-mode [threads|selectors|asyncio]` (default `threads`)
-- `--codex-command-timeout FLOAT` (default: disabled, debug defaults to 60s)
-- `--codex-no-child-timeout FLOAT` (default `15.0`, set `0` to disable)
 - `--workdir PATH` (override `codex_workspace`)
 - `--model NAME` (pass through to `codex exec`)
 

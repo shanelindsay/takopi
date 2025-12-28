@@ -178,7 +178,6 @@ class CodexExecRunner:
         prompt: str,
         session_id: Optional[str],
         on_event: Optional[Callable[[Dict[str, Any]], None]] = None,
-        show_output: bool = False,
     ) -> Tuple[str, str, bool]:
         """
         Returns (session_id, final_agent_message_text)
@@ -235,7 +234,7 @@ class CodexExecRunner:
                 evt = json.loads(line)
             except json.JSONDecodeError:
                 continue
-            for out in render_event_cli(evt, cli_state, show_output=show_output):
+            for out in render_event_cli(evt, cli_state):
                 log(f"[codex] {out}")
             if on_event is not None:
                 try:
@@ -272,16 +271,15 @@ class CodexExecRunner:
         prompt: str,
         session_id: Optional[str],
         on_event: Optional[Callable[[Dict[str, Any]], None]] = None,
-        show_output: bool = False,
     ) -> Tuple[str, str, bool]:
         """
         If resuming, serialize per-session.
         """
         if not session_id:
-            return self.run(prompt, session_id=None, on_event=on_event, show_output=show_output)
+            return self.run(prompt, session_id=None, on_event=on_event)
         lock = self._lock_for(session_id)
         with lock:
-            return self.run(prompt, session_id=session_id, on_event=on_event, show_output=show_output)
+            return self.run(prompt, session_id=session_id, on_event=on_event)
 
 
 # -------------------- Telegram loop --------------------
@@ -308,11 +306,6 @@ def run(
         True,
         "--ignore-backlog/--process-backlog",
         help="Skip pending Telegram updates that arrived before startup.",
-    ),
-    verbose: bool = typer.Option(
-        False,
-        "--verbose/--quiet",
-        help="Include command output in CLI logs.",
     ),
     log_file: Optional[str] = typer.Option(
         "exec_bridge.log",
@@ -478,7 +471,6 @@ def run(
                 text,
                 resume_session,
                 on_event=on_event,
-                show_output=verbose,
             )
         except Exception as e:
             _stop_background()

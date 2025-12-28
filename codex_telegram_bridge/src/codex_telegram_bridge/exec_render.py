@@ -112,15 +112,6 @@ def _with_id(item_id: Optional[int], line: str) -> str:
     return f"[?] {line}"
 
 
-def _truncate_output(text: str, max_lines: int = 20, max_chars: int = 4000) -> str:
-    if len(text) > max_chars:
-        text = text[-max_chars:]
-    lines = text.splitlines()
-    if len(lines) > max_lines:
-        lines = ["..."] + lines[-max_lines:]
-    return "\n".join(lines)
-
-
 def _format_item_action_line(etype: str, item_id: Optional[int], item: dict[str, Any]) -> str | None:
     itype = item["type"]
     if itype == "command_execution":
@@ -207,8 +198,6 @@ def _complete_action(state: ExecRenderState, item_id: Optional[int], line: str) 
 def render_event_cli(
     event: dict[str, Any],
     state: ExecRenderState,
-    *,
-    show_output: bool = False,
 ) -> list[str]:
     etype = event["type"]
     lines: list[str] = []
@@ -244,10 +233,6 @@ def render_event_cli(
             action_line = _format_item_action_line(etype, item_num, item)
             if action_line is not None:
                 lines.append(action_line)
-                if show_output and itype == "command_execution" and etype == "item.completed":
-                    output = _truncate_output(item["aggregated_output"])
-                    if output:
-                        lines.extend(indent(output, "  ").splitlines())
             elif etype == "item.completed":
                 completed_line = _format_item_completed_line(item_num, item)
                 if completed_line is not None:
