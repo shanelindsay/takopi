@@ -6,7 +6,9 @@ import urllib.request
 from typing import Any, Dict, List, Optional
 
 from .constants import DEFAULT_CHUNK_LEN, TELEGRAM_HARD_LIMIT
-from .rendering import render_markdown, _chunk_text_with_indices, _slice_entities
+from .rendering import render_markdown
+
+ELLIPSIS = "…"
 
 
 class TelegramClient:
@@ -64,7 +66,7 @@ class TelegramClient:
         entities: Optional[List[Dict[str, Any]]] = None,
     ) -> Dict[str, Any]:
         if len(text) > TELEGRAM_HARD_LIMIT:
-            raise ValueError("send_message received too-long text; chunk it first")
+            raise ValueError("send_message received too-long text")
         params: Dict[str, Any] = {
             "chat_id": chat_id,
             "text": text,
@@ -111,20 +113,35 @@ class TelegramClient:
         disable_notification: bool = False,
         chunk_len: int = DEFAULT_CHUNK_LEN,
     ) -> List[Dict[str, Any]]:
-        sent: List[Dict[str, Any]] = []
         rendered_text, entities = render_markdown(text)
-        chunks = _chunk_text_with_indices(rendered_text, limit=chunk_len)
-        for i, (chunk, start, end) in enumerate(chunks):
-            chunk_entities = _slice_entities(entities, start, end) if entities else None
-            msg = self.send_message(
-                chat_id=chat_id,
-                text=chunk,
-                reply_to_message_id=(reply_to_message_id if i == 0 else None),
-                disable_notification=disable_notification,
-                entities=chunk_entities,
-            )
-            sent.append(msg)
-        return sent
+        limit = min(chunk_len, TELEGRAM_HARD_LIMIT)
+        if len(rendered_text) > limit:
+            suffix = "\n" + ELLIPSIS
+            keep = max(0, limit - len(suffix))
+            rendered_text = rendered_text[:keep] + suffix
+            if entities:
+                trimmed: List[Dict[str, Any]] = []
+                for ent in entities:
+                    start = int(ent["offset"])
+                    length = int(ent["length"])
+                    if start >= keep:
+                        continue
+                    end = min(start + length, keep)
+                    if end <= start:
+                        continue
+                    d = dict(ent)
+                    d["length"] = end - start
+                    trimmed.append(d)
+                entities = trimmed
+
+        msg = self.send_message(
+            chat_id=chat_id,
+            text=rendered_text,
+            reply_to_message_id=reply_to_message_id,
+            disable_notification=disable_notification,
+            entities=entities or None,
+        )
+        return [msg]
 
     def send_chat_action(self, chat_id: int, action: str = "typing") -> Dict[str, Any]:
         params: Dict[str, Any] = {
