@@ -11,7 +11,7 @@ All options store a mapping from `(chat_id, bot_message_id)` to a route so repli
 ## Install
 
 1. Ensure `uv` is installed.
-2. Use the scripts in this folder as-is (no extra dependencies).
+2. Use the scripts in this folder as-is; `uv run` will install the inline dependencies.
 3. Put your Telegram credentials in `~/.codex/telegram.toml`.
 
 Example `~/.codex/telegram.toml`:

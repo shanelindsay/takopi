@@ -1,3 +1,8 @@
+#!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.10"
+# dependencies = ["markdown-it-py", "sulguk", "tomli; python_version < '3.11'"]
+# ///
 from __future__ import annotations
 
 import subprocess

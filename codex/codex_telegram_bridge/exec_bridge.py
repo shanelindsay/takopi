@@ -1,3 +1,8 @@
+#!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.10"
+# dependencies = ["markdown-it-py", "sulguk", "tomli; python_version < '3.11'"]
+# ///
 from __future__ import annotations
 
 import json
@@ -216,7 +221,7 @@ def main() -> None:
             except Exception as e:
                 log(f"[handle] failed typing indicator chat_id={chat_id}: {e}")
             session_id, answer = runner.run_serialized(text, resume_session)
-            sent_msgs = bot.send_message_chunked(
+            sent_msgs = bot.send_message_markdown_chunked(
                 chat_id=chat_id,
                 text=answer,
                 reply_to_message_id=user_msg_id,
@@ -229,7 +234,11 @@ def main() -> None:
             )
         except Exception as e:
             err = f"❌ Error:\n{e}"
-            sent_msgs = bot.send_message_chunked(chat_id=chat_id, text=err, reply_to_message_id=user_msg_id)
+            sent_msgs = bot.send_message_markdown_chunked(
+                chat_id=chat_id,
+                text=err,
+                reply_to_message_id=user_msg_id,
+            )
             for m in sent_msgs:
                 store.link(chat_id, m["message_id"], "exec", resume_session or "unknown", meta={"error": True})
             log(

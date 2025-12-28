@@ -1,3 +1,8 @@
+#!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.10"
+# dependencies = ["markdown-it-py", "sulguk", "tomli; python_version < '3.11'"]
+# ///
 from __future__ import annotations
 
 import json
@@ -309,12 +314,20 @@ def main() -> None:
                         # Worst-case fallback (still let user see output)
                         sid = "unknown-session"
 
-                sent_msgs = bot.send_message_chunked(chat_id=chat_id, text=answer, reply_to_message_id=user_msg_id)
+                sent_msgs = bot.send_message_markdown_chunked(
+                    chat_id=chat_id,
+                    text=answer,
+                    reply_to_message_id=user_msg_id,
+                )
                 for m in sent_msgs:
                     store.link(chat_id, m["message_id"], "mcp", sid, meta={"cwd": default_cwd})
             except Exception as e:
                 err = f"❌ Error:\n{e}"
-                sent_msgs = bot.send_message_chunked(chat_id=chat_id, text=err, reply_to_message_id=user_msg_id)
+                sent_msgs = bot.send_message_markdown_chunked(
+                    chat_id=chat_id,
+                    text=err,
+                    reply_to_message_id=user_msg_id,
+                )
                 for m in sent_msgs:
                     store.link(chat_id, m["message_id"], "mcp", conversation_id or "unknown", meta={"error": True})
             finally:

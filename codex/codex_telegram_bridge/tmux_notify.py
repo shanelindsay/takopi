@@ -1,3 +1,8 @@
+#!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.10"
+# dependencies = ["markdown-it-py", "sulguk", "tomli; python_version < '3.11'"]
+# ///
 from __future__ import annotations
 
 import argparse
@@ -35,7 +40,7 @@ def main() -> None:
     if text is None:
         text = sys.stdin.read()
 
-    sent = bot.send_message_chunked(
+    sent = bot.send_message_markdown_chunked(
         chat_id=args.chat_id,
         text=text,
         reply_to_message_id=args.reply_to,
