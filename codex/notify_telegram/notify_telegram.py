@@ -33,7 +33,7 @@ def main() -> None:
 
     text = re.sub(r"(?m)^(\s*)•", r"\1-", rendered.text)
 
-    # FIX: Telegram requires MessageEntity.language (if present) to be a String. :contentReference[oaicite:3]{index=3}
+    # FIX: Telegram requires MessageEntity.language (if present) to be a String.
     entities = []
     for e in rendered.entities:
         d = dict(e)
