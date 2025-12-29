@@ -2,7 +2,7 @@
 name = "takopi"
 authors = [{name = "banteg"}]
 version = "0.1.0"
-description = "Telegram bridge tools for Codex."
+description = "Run OpenAI Codex CLI with Telegram as the human-in-the-loop interface."
 readme = "readme.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.12"
@@ -18,6 +18,7 @@ classifiers = [
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Programming Language :: Python :: 3 :: Only",
   "Operating System :: OS Independent",
 ]
@@ -31,21 +32,15 @@ Issues = "https://github.com/banteg/takopi/issues"
 takopi = "takopi.exec_bridge:main"
 
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/takopi"]
-
-[tool.hatch.build.targets.sdist]
-include = ["src/takopi", "readme.md", "LICENSE"]
+requires = ["uv_build>=0.9.18,<0.10.0"]
+build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
     "pytest>=9.0.2",
     "pytest-cov>=7.0.0",
     "ruff>=0.14.10",
-    "ty>=0.0.7",
+    "ty>=0.0.8",
 ]
 
 [tool.pytest.ini_options]
