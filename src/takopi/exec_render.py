@@ -32,7 +32,7 @@ def format_header(elapsed_s: float, item: int | None, label: str) -> str:
     elapsed = format_elapsed(elapsed_s)
     parts = [label, elapsed]
     if item is not None:
-        parts.append(f"item {item}")
+        parts.append(f"step {item}")
     return HEADER_SEP.join(parts)
 
 
@@ -68,6 +68,7 @@ def format_event(
     last_item: int | None,
     *,
     command_width: int | None = None,
+    escape_markdown: bool = False,
 ) -> tuple[int | None, list[str], str | None, str | None]:
     """
     Returns (new_last_item, cli_lines, progress_line, progress_prefix).
@@ -92,6 +93,9 @@ def format_event(
             item_num = extract_numeric_id(item["id"], last_item)
             last_item = item_num if item_num is not None else last_item
             prefix = f"{item_num}. "
+            if escape_markdown and item_num is not None:
+                # Avoid ordered-list parsing which renumbers items in MarkdownIt/CommonMark.
+                prefix = f"{item_num}\\." + " "
 
             match (item["type"], etype):
                 case ("agent_message", "item.completed"):
@@ -160,7 +164,9 @@ def format_event(
 def render_event_cli(
     event: dict[str, Any], last_item: int | None = None
 ) -> tuple[int | None, list[str]]:
-    last_item, cli_lines, _, _ = format_event(event, last_item, command_width=None)
+    last_item, cli_lines, _, _ = format_event(
+        event, last_item, command_width=None, escape_markdown=False
+    )
     return last_item, cli_lines
 
 
@@ -180,7 +186,10 @@ class ExecProgressRenderer:
             return True
 
         self.last_item, _, progress_line, progress_prefix = format_event(
-            event, self.last_item, command_width=self.command_width
+            event,
+            self.last_item,
+            command_width=self.command_width,
+            escape_markdown=True,
         )
         if progress_line is None:
             return False

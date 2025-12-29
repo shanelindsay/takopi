@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 from takopi.exec_render import ExecProgressRenderer, render_event_cli
+from takopi.rendering import render_markdown
 
 
 def _loads(lines: str) -> list[dict]:
@@ -67,11 +68,11 @@ def test_progress_renderer_renders_progress_and_final() -> None:
         r.note_event(evt)
 
     progress = r.render_progress(3.0)
-    assert progress.startswith("working · 3s · item 3")
-    assert "1. ✓ `bash -lc ls`" in progress
+    assert progress.startswith("working · 3s · step 3")
+    assert "1\\. ✓ `bash -lc ls`" in progress
 
     final = r.render_final(3.0, "answer", status="done")
-    assert final.startswith("done · 3s · item 3")
+    assert final.startswith("done · 3s · step 3")
     assert "running:" not in final
     assert "ran:" not in final
     assert final.endswith("answer")
@@ -97,6 +98,33 @@ def test_progress_renderer_clamps_actions_and_ignores_unknown() -> None:
         assert r.note_event(evt) is True
 
     assert len(r.recent_actions) == 3
-    assert r.recent_actions[0].startswith("3. ")
-    assert r.recent_actions[-1].startswith("5. ")
+    assert r.recent_actions[0].startswith("3\\. ")
+    assert r.recent_actions[-1].startswith("5\\. ")
     assert r.note_event({"type": "mystery"}) is False
+
+
+def test_progress_renderer_preserves_item_ids_in_telegram_text() -> None:
+    r = ExecProgressRenderer(max_actions=5, command_width=None)
+    for i in (30, 31, 32):
+        r.note_event(
+            {
+                "type": "item.completed",
+                "item": {
+                    "id": f"item_{i}",
+                    "type": "command_execution",
+                    "command": f"echo {i}",
+                    "exit_code": 0,
+                    "status": "completed",
+                },
+            }
+        )
+
+    md = r.render_progress(0.0)
+    assert "30\\." in md
+    assert "31\\." in md
+    assert "32\\." in md
+
+    text, _ = render_markdown(md)
+    assert "30. ✓ echo 30" in text
+    assert "31. ✓ echo 31" in text
+    assert "32. ✓ echo 32" in text
