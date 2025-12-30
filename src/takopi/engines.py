@@ -50,7 +50,7 @@ def _codex_build_runner(config: EngineConfig, config_path: Path) -> Runner:
 
     extra_args_value = config.get("extra_args")
     if extra_args_value is None:
-        extra_args = ["-c", "notify=[]"]
+        extra_args = ["-c", "notify=[]", "--skip-git-repo-check"]
     elif isinstance(extra_args_value, list) and all(
         isinstance(item, str) for item in extra_args_value
     ):
