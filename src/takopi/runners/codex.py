@@ -545,9 +545,8 @@ class CodexRunner(ResumeRunnerMixin, Runner):
             "[codex] start run resume=%r", resume_token.value if resume_token else None
         )
         logger.debug("[codex] prompt: %s", prompt)
-        args = [self.codex_cmd]
+        args = [self.codex_cmd, "exec", "--json"]
         args.extend(self.extra_args)
-        args.extend(["exec", "--json"])
 
         if resume_token:
             args.extend(["resume", resume_token.value, "-"])
