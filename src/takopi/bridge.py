@@ -281,7 +281,7 @@ async def handle_message(
     clock: Callable[[], float] = time.monotonic,
     sleep: Callable[[float], Awaitable[None]] = anyio.sleep,
     progress_edit_every: float = PROGRESS_EDIT_EVERY_S,
-) -> None:
+) -> ResumeToken | None:
     logger.debug(
         "[handle] incoming chat_id=%s message_id=%s resume=%r text=%s",
         chat_id,
@@ -459,11 +459,11 @@ async def handle_message(
             is_resume_line=is_resume_line,
         )
         if final_msg is None:
-            return
+            return resume_token_value
         if progress_id is not None and not edited:
             logger.debug("[error] delete progress message_id=%s", progress_id)
             await cfg.bot.delete_message(chat_id=chat_id, message_id=progress_id)
-        return
+        return resume_token_value
 
     elapsed = clock() - started_at
     if cancelled:
@@ -487,11 +487,11 @@ async def handle_message(
             is_resume_line=is_resume_line,
         )
         if final_msg is None:
-            return
+            return resume_token_value
         if progress_id is not None and not edited:
             logger.debug("[cancel] delete progress message_id=%s", progress_id)
             await cfg.bot.delete_message(chat_id=chat_id, message_id=progress_id)
-        return
+        return resume_token_value
 
     if answer is None:
         raise RuntimeError("runner finished without a completed event")
@@ -544,10 +544,11 @@ async def handle_message(
         prepared=(final_rendered, final_entities),
     )
     if final_msg is None:
-        return
+        return resume_token_value
     if progress_id is not None and (edit_message_id is None or not edited):
         logger.debug("[final] delete progress message_id=%s", progress_id)
         await cfg.bot.delete_message(chat_id=chat_id, message_id=progress_id)
+    return resume_token_value
 
 
 async def poll_updates(cfg: BridgeConfig):
@@ -664,6 +665,7 @@ async def _run_main_loop(
     poller: Callable[[BridgeConfig], AsyncIterator[dict[str, Any]]] = poll_updates,
 ) -> None:
     running_tasks: dict[int, RunningTask] = {}
+    last_resumes: dict[int, ResumeToken] = {}
 
     try:
         async with anyio.create_task_group() as tg:
@@ -706,7 +708,7 @@ async def _run_main_loop(
                 | None = None,
             ) -> None:
                 try:
-                    await handle_message(
+                    resume = await handle_message(
                         cfg,
                         chat_id=chat_id,
                         user_msg_id=user_msg_id,
@@ -716,6 +718,8 @@ async def _run_main_loop(
                         on_thread_known=on_thread_known,
                         progress_edit_every=cfg.progress_edit_every,
                     )
+                    if resume is not None:
+                        last_resumes[chat_id] = resume
                 except Exception:
                     logger.exception("[handle] worker failed")
 
@@ -776,6 +780,15 @@ async def _run_main_loop(
                 if _is_cancel_command(text):
                     tg.start_soon(_handle_cancel, cfg, msg, running_tasks)
                     continue
+                if text.strip() in {"/new", "/reset"}:
+                    last_resumes.pop(msg["chat"]["id"], None)
+                    await cfg.bot.send_message(
+                        chat_id=msg["chat"]["id"],
+                        text="Started a fresh session. Send your next message.",
+                        reply_to_message_id=user_msg_id,
+                        disable_notification=True,
+                    )
+                    continue
 
                 r = msg.get("reply_to_message") or {}
                 resume_token = _resolve_resume(cfg.runner, text, r.get("text"))
@@ -806,6 +819,8 @@ async def _run_main_loop(
                             engine_text or engine_reply,
                             str(cfg.runner.engine),
                         )
+                    if resume_token is None and not attempt:
+                        resume_token = last_resumes.get(msg["chat"]["id"])
 
                 if resume_token is None:
                     tg.start_soon(
