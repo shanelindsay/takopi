@@ -29,7 +29,8 @@ runs in parallel across threads and queues per thread to keep codex history sane
 1. get `bot_token` from [@BotFather](https://t.me/BotFather)
 2. get `chat_id` from [@myidbot](https://t.me/myidbot)
 3. send `/start` to the bot (telegram won't let it message you first)
-4. run `codex` once interactively in the repo to trust the directory
+
+takopi runs Codex with `--skip-git-repo-check` to avoid trust errors in non-git folders.
 
 ## config
 
@@ -72,6 +73,14 @@ default: progress is silent, final answer is sent as a new message (notification
 
 * private chat only
 * run exactly one instance per bot token
+
+To force a fresh session, send `/new` before your next message.
+
+### resume a session
+
+By default, takopi resumes the most recent session for that chat.
+
+Reply to a bot message (containing `resume: <uuid>`), or include the resume line in your message:
 
 ## development
 
