@@ -780,7 +780,7 @@ async def _run_main_loop(
                 if _is_cancel_command(text):
                     tg.start_soon(_handle_cancel, cfg, msg, running_tasks)
                     continue
-                if text.strip() in {"/new", "/reset"}:
+                if text.strip() == "/new":
                     last_resumes.pop(msg["chat"]["id"], None)
                     await cfg.bot.send_message(
                         chat_id=msg["chat"]["id"],

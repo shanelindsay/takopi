@@ -74,7 +74,7 @@ default: progress is silent, final answer is sent as a new message (notification
 * private chat only
 * run exactly one instance per bot token
 
-To force a fresh session, send `/new` (or `/reset`) before your next message.
+To force a fresh session, send `/new` before your next message.
 
 ### resume a session
 
