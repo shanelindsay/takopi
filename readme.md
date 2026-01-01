@@ -40,6 +40,8 @@ legacy `.codex/takopi.toml` is migrated automatically.
 ```toml
 bot_token = "123456789:ABCdefGHIjklMNOpqrsTUVwxyz"
 chat_id = 123456789
+# optional: prepend this text to the first message in a new session
+start_prompt = "You are running inside a Telegram bot."
 
 [codex]
 # optional: profile from ~/.codex/config.toml

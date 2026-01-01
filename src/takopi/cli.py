@@ -54,6 +54,11 @@ def _parse_bridge_config(
             f"Invalid `chat_id` in {config_path}; expected an integer."
         ) from None
     chat_id = chat_id_value
+    start_prompt_value = config.get("start_prompt")
+    if start_prompt_value is not None and not isinstance(start_prompt_value, str):
+        raise ConfigError(
+            f"Invalid `start_prompt` in {config_path}; expected a string."
+        )
 
     engine_cfg = get_engine_config(config, backend.id, config_path)
     startup_msg = backend.startup_message(startup_pwd)
@@ -67,6 +72,7 @@ def _parse_bridge_config(
         chat_id=chat_id,
         final_notify=final_notify,
         startup_msg=startup_msg,
+        start_prompt=start_prompt_value,
     )
 
 

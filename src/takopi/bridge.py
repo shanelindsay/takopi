@@ -232,6 +232,7 @@ class BridgeConfig:
     chat_id: int
     final_notify: bool
     startup_msg: str
+    start_prompt: str | None = None
     progress_edit_every: float = PROGRESS_EDIT_EVERY_S
 
 
@@ -275,6 +276,7 @@ async def handle_message(
     user_msg_id: int,
     text: str,
     resume_token: ResumeToken | None,
+    is_new_thread: bool = False,
     running_tasks: dict[int, RunningTask] | None = None,
     on_thread_known: Callable[[ResumeToken, anyio.Event], Awaitable[None]]
     | None = None,
@@ -293,6 +295,8 @@ async def handle_message(
     runner = cfg.runner
     is_resume_line = runner.is_resume_line
     runner_text = _strip_resume_lines(text, is_resume_line=is_resume_line)
+    if is_new_thread and cfg.start_prompt:
+        runner_text = f"{cfg.start_prompt}\n\n{runner_text}"
 
     progress_renderer = ExecProgressRenderer(
         max_actions=5, resume_formatter=runner.format_resume
@@ -704,6 +708,7 @@ async def _run_main_loop(
                 user_msg_id: int,
                 text: str,
                 resume_token: ResumeToken | None,
+                is_new_thread: bool,
                 on_thread_known: Callable[[ResumeToken, anyio.Event], Awaitable[None]]
                 | None = None,
             ) -> None:
@@ -714,6 +719,7 @@ async def _run_main_loop(
                         user_msg_id=user_msg_id,
                         text=text,
                         resume_token=resume_token,
+                        is_new_thread=is_new_thread,
                         running_tasks=running_tasks,
                         on_thread_known=on_thread_known,
                         progress_edit_every=cfg.progress_edit_every,
@@ -743,6 +749,7 @@ async def _run_main_loop(
                             job.user_msg_id,
                             job.text,
                             job.resume_token,
+                            False,
                         )
                 finally:
                     async with scheduler_lock:
@@ -819,8 +826,12 @@ async def _run_main_loop(
                             engine_text or engine_reply,
                             str(cfg.runner.engine),
                         )
+                    is_new_thread = False
                     if resume_token is None and not attempt:
+                        is_new_thread = msg["chat"]["id"] not in last_resumes
                         resume_token = last_resumes.get(msg["chat"]["id"])
+                else:
+                    is_new_thread = False
 
                 if resume_token is None:
                     tg.start_soon(
@@ -829,6 +840,7 @@ async def _run_main_loop(
                         user_msg_id,
                         text,
                         None,
+                        is_new_thread,
                         note_thread_known,
                     )
                 else:
